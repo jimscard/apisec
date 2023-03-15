@@ -1,0 +1,4 @@
+roles:
+- name: linuxhq.git
+- name: iesplin.burp_suite
+- name: alzadude.firefox-addon

@@ -1,0 +1,98 @@
+- name: Provision ApiSec course Kali Server
+  hosts: all
+  become: true
+  tasks:
+    - name: Upgrade distribution
+      ansible.builtin.apt:
+        upgrade: dist
+    - name: Bring all packages up to date
+      ansible.builtin.apt:
+        name: "*"
+        state: latest
+        update_cache: true
+    - name: Update and install stuff using apt
+      ansible.builtin.apt:
+        update_cache: true
+        pkg:
+          - testssl.sh
+          - tldr
+          - snapd
+          - git
+          - docker.io
+          - docker-compose
+          - golang
+          - zaproxy
+    - name: Enable and start snap services
+      ansible.builtin.service:
+        name: snapd
+        enabled: true
+        state: started
+    - name: Enable and start app armor
+      ansible.builtin.service:
+        name: apparmor
+        enabled: true
+        state: started
+    - name: Clone Tools
+      ansible.builtin.include_role:
+        name: linuxhq.git
+      vars:
+        git_become: true
+        git_become_user: root
+        git_repos:
+          - repo: jwt_tool
+            dest: "/opt/jwt_tool"
+            org: ticarpi
+            server: github.com
+            update_repo: true
+            force: true
+          - repo: kiterunner
+            dest: "/opt/kiterunner"
+            org: assetnote
+            server: github.com
+            update_repo: true
+            force: true
+          - repo: Arjun
+            dest: "/opt/Arjun"
+            org: s0md3v
+            server: github.com
+            update_repo: true
+            force: true
+    - name: Link JWT
+      ansible.builtin.file:
+        dest: "/usr/local/bin/jwt_tool"
+        src: "/opt/jwt_tool/jwt_tool.py"
+        state: link
+        mode: "u=rwx,g=rx,o=rx"
+    - name: Build KR
+      # Make it
+      ansible.builtin.command: make build
+      become: true
+      become_user: root
+      args:
+        chdir: /opt/kiterunner
+    - name: Link KR
+      ansible.builtin.file:
+      become: true
+      become_user: root
+      args:      
+        dest: "/usr/local/bin/kr"
+        src: "/opt/kiterunner/dist/kr"
+        state: link
+        mode: "u=rwx,g=rx,o=rx"
+    - name: Install Arjun
+      ansible.builtin.command: python3 ./setup.py install
+      become: true
+      become_user: root
+      args:
+        chdir: /opt/Arjun
+    - name: Install Burp Community
+      ansible.builtin.include_role:
+        name: iesplin.burp_suite
+      vars:
+        burpsuite_user: vagrant
+    - name: Install foxyproxy
+      ansible.builtin.include_role:
+        name: alzadude.firefox-addon
+      vars:
+        url: https://addons.mozilla.org/en-US/firefox/addon/foxyproxy-standard
+        state: present

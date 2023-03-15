@@ -1,0 +1,49 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# 
+# Vagrantfile to set up the Kali workstatio for the APISec University API Pen Tester course
+# https://www.apisecuniversity.com/
+# 
+# Jim Scardelis, M.S., CISSP, CISA, CEH, CCSK, QSA, PCI Secure Software, Secure SLC, P2PE, P2PE Application & 3DS Assessor, PCIP, CIPP/US, CIPP/C, CIPP/E, CIPT, CTT+
+# 
+# 2023-03-14  Version 1.0
+#
+#####
+# 
+# Dependencies: 
+# 
+# VMWare Fusion or Workstation
+# 
+# Hashicorp Vagrant with VMWare provider installed. 
+#
+# 
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "kalilinux/rolling"
+  
+  config.vm.provider "vmware_desktop" do |v|
+    v.gui = true
+    v.vmx["ethernet0.virtualdev"] = "vmxnet3"
+    v.vmx["ethernet0.pcislotnumber"] = "160"
+    v.vmx["memsize"] = "4096"
+    v.vmx["numvcpus"] = "2"
+    v.vmx['displayname'] = "Kali-ApiSec-2023"
+  end
+  config.vm.hostname = "Kali2023api"
+  
+  config.vm.provision "ansible_local" do |ansible|
+    ansible.verbose = "v"
+    ansible.playbook = "provisioning/playbook.yml"
+    ansible.galaxy_role_file = "provisioning/requirements.yml"
+  end
+  config.vm.provision "shell", privileged: false, inline: <<-EOF
+    echo "Manual steps left to do..."
+    echo "You will need to start BurpSuite and install the Autorize extension."
+    echo "Foxproxy is installed, but you need to configure it."
+    echo "In foxy options, add Burpsuite port 8080 and postman port 5555"
+    echo "Burp suite is installed and configured, but you need to install the certificate in Firefox"
+    echo "Then run postman & associate to my account. Create a collection called ACE"
+    echo "then open zap and add the OpenAPI Support addon"
+  EOF
+end 
